@@ -5,6 +5,7 @@ import {
   CheckCircle, X, ArrowRight, ShieldCheck, Truck
 } from "lucide-react";
 
+
 const INITIAL_FOODS = [
   { id: 1, name: "Chicken Biryani", category: "Biryani", price: 220, rating: 4.8, description: "Aromatic basmati rice with tender chicken and traditional spices.", image: "https://images.unsplash.com/photo-1563379091339-03246963d96c?w=700" },
   { id: 2, name: "Margherita Pizza", category: "Pizza", price: 249, rating: 4.7, description: "Classic cheese pizza with fresh basil and tomato.", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=700" },
@@ -22,7 +23,7 @@ const read = (key, fallback) => {
   catch { return fallback; }
 };
 
-export default function App() {
+export default function App() { 
   const [foods, setFoods] = useState(() => read("fe_foods", INITIAL_FOODS));
   const [users, setUsers] = useState(() => read("fe_users", []));
   const [orders, setOrders] = useState(() => read("fe_orders", []));
@@ -94,16 +95,41 @@ export default function App() {
     }
   };
 
-  const placeOrder = () => {
-    if (!cartItems.length) return;
-    const order = {
-      id: `FE${Date.now().toString().slice(-7)}`,
-      userId: currentUser.id, customer: currentUser.name, email: currentUser.email,
-      items: cartItems.map(({ id, name, price, qty }) => ({ id, name, price, qty })),
-      total, status: "Order Received", date: new Date().toLocaleString()
-    };
-    setOrders(prev => [order, ...prev]); setCart({}); go("orders"); flash("Your order has been placed!");
+  
+const placeOrder = () => {
+  if (!currentUser || currentUser.role !== "user") {
+    flash("Please login with customer account.");
+    return;
+  }
+
+  if (cartItems.length === 0) {
+    flash("Your cart is empty.");
+    return;
+  }
+
+  const order = {
+    id: `FE${Date.now()}`,
+    userId: currentUser.id,
+    customer: currentUser.name,
+    email: currentUser.email,
+    items: cartItems.map(({ id, name, price, qty }) => ({
+      id, name, price, qty
+    })),
+    total: total + 30 + Math.round(total * 0.05),
+    status: "Order Received",
+    date: new Date().toLocaleString()
   };
+
+  const updatedOrders = [order, ...orders];
+
+  localStorage.setItem("fe_orders", JSON.stringify(updatedOrders));
+  setOrders(updatedOrders);
+
+  setCart({});
+  go("orders");
+  flash("Your order has been placed!");
+};
+
   const saveFood = event => {
     event.preventDefault();
     const item = { ...foodForm, price: Number(foodForm.price), rating: 4.5, id: editingId || Date.now(), image: foodForm.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=700" };
